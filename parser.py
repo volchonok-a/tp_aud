@@ -46,11 +46,6 @@ def extract_rooms_from_cell(cell: str) -> set:
 
 
 def parse_schedule(rows):
-    print("\n🔍 ПЕРВЫЕ 10 СТРОК ИЗ CSV:")
-    for i, row in enumerate(rows[:10]):
-        if len(row) >= 2:
-            print(
-                f"   Строка {i}: day='{row[0].strip() if row[0] else ''}' time='{row[1].strip() if len(row) > 1 and row[1] else ''}'")
     """Парсит расписание, правильно разделяя числитель и знаменатель."""
     schedule = {
         "числитель": {day: {time: set() for time in TIME_SLOTS} for day in WEEKDAYS_RU},
@@ -61,9 +56,8 @@ def parse_schedule(rows):
     current_time = None
     rows_in_current_pair = 0
 
-    # Флаг для отладки конкретного дня и времени
-    DEBUG_DAY = "Среда"
-    DEBUG_TIME = "11:30-13:05"
+    DEBUG_DAY = "Понедельник"
+    DEBUG_TIME = "8:00 - 9:35"
 
     for row_idx, row in enumerate(rows):
         if len(row) < 2:
@@ -72,28 +66,22 @@ def parse_schedule(rows):
         day_cell = row[0].strip() if row[0] else ""
         time_cell = row[1].strip() if len(row) > 1 and row[1] else ""
 
-        if time_cell == 'Часы звонков' or (not time_cell and not day_cell and current_day is None):
+        # Пропускаем служебные строки ДО начала любого дня
+        if time_cell == 'Часы звонков':
             continue
 
         # --- ОБНАРУЖЕН НОВЫЙ ДЕНЬ НЕДЕЛИ ---
         if day_cell in WEEKDAYS_RU:
-            if current_day == DEBUG_DAY:
-                print(f"\n{'=' * 60}")
-                print(f"📅 ДЕНЬ: {day_cell} (строка {row_idx})")
+            if current_day == DEBUG_DAY or day_cell == DEBUG_DAY:
+                print(f"\n📅 НОВЫЙ ДЕНЬ: {day_cell} (строка {row_idx})")
             current_day = day_cell
             current_time = None
             rows_in_current_pair = 0
-            continue
+            # НЕ делаем continue! Идём дальше и проверяем time_cell
 
         # --- МЫ ВНУТРИ ДНЯ НЕДЕЛИ ---
         if current_day:
-            if day_cell and day_cell in WEEKDAYS_RU:
-                current_day = day_cell
-                current_time = None
-                rows_in_current_pair = 0
-                continue
-
-            # --- ОБНАРУЖЕНО ВРЕМЯ (числитель) ---
+            # --- ОБНАРУЖЕНО ВРЕМЯ ---
             if time_cell:
                 time_normalized = time_cell.replace(" ", "")
                 if '-' in time_normalized:
@@ -110,7 +98,7 @@ def parse_schedule(rows):
 
                 if matched_time:
                     current_time = matched_time
-                    rows_in_current_pair = 1
+                    rows_in_current_pair = 1  # Первая строка пары — числитель
 
                     rooms = set()
                     for col_idx in range(2, len(row)):
@@ -121,11 +109,10 @@ def parse_schedule(rows):
 
                     schedule["числитель"][current_day][current_time].update(rooms)
 
-                    # Отладка для проблемного дня/времени
                     if current_day == DEBUG_DAY and current_time == DEBUG_TIME:
-                        print(f"   ⏰ {current_time} | ЧИСЛИТЕЛЬ | ауд: {sorted(rooms)}")
+                        print(f"   ⏰ {current_time} | ЧИСЛИТЕЛЬ | ауд: {sorted(rooms) if rooms else '(пусто)'}")
 
-            # --- НЕТ ДНЯ И НЕТ ВРЕМЕНИ (возможный знаменатель) ---
+            # --- НЕТ ДНЯ И НЕТ ВРЕМЕНИ (знаменатель) ---
             elif not day_cell and not time_cell:
                 if rows_in_current_pair > 0:
                     rows_in_current_pair += 1
@@ -139,20 +126,18 @@ def parse_schedule(rows):
 
                     schedule["знаменатель"][current_day][current_time].update(rooms)
 
-                    # Отладка для проблемного дня/времени
                     if current_day == DEBUG_DAY and current_time == DEBUG_TIME and rooms:
                         print(f"      {current_time} | ЗНАМЕНАТЕЛЬ (строка {row_idx}) | ауд: {sorted(rooms)}")
 
+                    # Защита от бесконечного знаменателя
                     if rows_in_current_pair >= 8:
                         rows_in_current_pair = 0
-                else:
-                    pass
+                # else: просто пустая строка между блоками, игнорируем
 
-    # ИТОГОВЫЙ ВЫВОД ДЛЯ ОТЛАДКИ
-    print(f"\n{'=' * 60}")
-    print(f"🔍 ИТОГО для {DEBUG_DAY} {DEBUG_TIME}:")
-    print(f"   📘 ЧИСЛИТЕЛЬ: {sorted(schedule['числитель'][DEBUG_DAY][DEBUG_TIME])}")
-    print(f"   📗 ЗНАМЕНАТЕЛЬ: {sorted(schedule['знаменатель'][DEBUG_DAY][DEBUG_TIME])}")
+    # ИТОГОВЫЙ ВЫВОД
+    print(f"\n🔍 ИТОГО для {DEBUG_DAY} {DEBUG_TIME}:")
+    print(f"   📘 ЧИСЛИТЕЛЬ: {sorted(schedule['числитель'][DEBUG_DAY][DEBUG_TIME]) if schedule['числитель'][DEBUG_DAY][DEBUG_TIME] else '(пусто)'}")
+    print(f"   📗 ЗНАМЕНАТЕЛЬ: {sorted(schedule['знаменатель'][DEBUG_DAY][DEBUG_TIME]) if schedule['знаменатель'][DEBUG_DAY][DEBUG_TIME] else '(пусто)'}")
 
     return schedule
 
