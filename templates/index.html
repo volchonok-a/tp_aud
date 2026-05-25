@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Свободные аудитории - ФКН</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏛️ Поиск свободных аудиторий</h1>
+            <p>ФКН ВГУ</p>
+            <div class="badge">📁 Расписание</div>
+        </header>
+
+        <form id="searchForm">
+            <div class="form-group">
+                <label>🔄 Тип недели</label>
+                <select id="weekType">
+                    <option value="числитель">Числитель</option>
+                    <option value="знаменатель">Знаменатель</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>📅 День недели</label>
+                <select id="weekday">
+                    <option value="">Выберите день</option>
+                    {% for key, name in weekdays.items() %}
+                    <option value="{{ key }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>⏰ Время пары</label>
+                <select id="timeSlot">
+                    <option value="">Выберите время</option>
+                    {% for slot in time_slots %}
+                    <option value="{{ slot }}">{{ slot }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit">🔍 Найти</button>
+            </div>
+        </form>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка...</p>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('searchForm');
+        const loading = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const weekType = document.getElementById('weekType').value;
+            const weekday = document.getElementById('weekday').value;
+            const timeSlot = document.getElementById('timeSlot').value;
+
+            if (!weekday || !timeSlot) {
+                showError('Пожалуйста, выберите день и время');
+                return;
+            }
+
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/free_rooms', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ weekday, time_slot: timeSlot, week_type: weekType })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    let html = `<div class="result-info">
+                        <strong>📅 ${data.weekday_display}</strong> |
+                        ⏰ ${data.time_slot} |
+                        🔄 ${data.week_type} |
+                        🟢 Свободно: ${data.count} из ${data.total_rooms}
+                    </div>`;
+
+                    html += `<div class="rooms-grid">
+                        ${data.free_rooms.map(r => `<div class="room-card free">${r}</div>`).join('')}
+                    </div>`;
+
+                    if (data.occupied_rooms.length) {
+                        html += `<hr><div class="rooms-grid">
+                            ${data.occupied_rooms.map(r => `<div class="room-card occupied">${r}</div>`).join('')}
+                        </div>`;
+                    }
+
+                    resultDiv.innerHTML = html;
+                    resultDiv.style.display = 'block';
+                } else {
+                    showError(data.error || 'Ошибка при поиске');
+                }
+            } catch(err) {
+                showError('Ошибка соединения с сервером');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function showError(msg) {
+            errorDiv.innerHTML = msg;
+            errorDiv.style.display = 'block';
+            setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+        }
+    </script>
+</body>
+</html>
