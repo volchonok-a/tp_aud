@@ -143,5 +143,9 @@ def get_occupied_rooms(day_name: str, time_slot: str, week_type: str = "числ
     day_ru = day_map.get(day_name.lower(), day_name)
     occupied = schedule.get(week_type, {}).get(day_ru, {}).get(time_slot, set())
 
+<<<<<<< HEAD
     return occupied
 
+=======
+    return occupied
+>>>>>>> 138a16c7eeff0c177e176dadcc3566de6434b8fd

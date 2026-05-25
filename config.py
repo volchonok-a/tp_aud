@@ -9,8 +9,13 @@ TIME_SLOTS = [
     "20:10-21:30"
 ]
 
+<<<<<<< HEAD
 WEEKDAYS_EN = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
 WEEKDAYS_RU = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+=======
+WEEKDAYS_RU = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"]
+WEEKDAYS_EN = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+>>>>>>> 138a16c7eeff0c177e176dadcc3566de6434b8fd
 WEEKDAY_MAP = dict(zip(WEEKDAYS_EN, WEEKDAYS_RU))
 
 ALL_ROOMS = sorted([

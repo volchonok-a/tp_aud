@@ -16,6 +16,7 @@ def api_free_rooms():
         time_slot = data.get('time_slot')
         week_type = data.get('week_type', 'числитель')
 
+<<<<<<< HEAD
         if isinstance(weekday, int):
             days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
             weekday = days[weekday] if 0 <= weekday < len(days) else weekday
@@ -24,6 +25,9 @@ def api_free_rooms():
         if isinstance(day_name, int):
             day_name = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'][weekday]
 
+=======
+        day_name = WEEKDAY_MAP.get(weekday, weekday)
+>>>>>>> 138a16c7eeff0c177e176dadcc3566de6434b8fd
         occupied = get_occupied_rooms(day_name, time_slot, week_type)
         free_rooms = sorted([r for r in ALL_ROOMS if r not in occupied])
 
